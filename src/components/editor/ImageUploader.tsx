@@ -1,8 +1,8 @@
 "use client";
 
-import { useId, useState, type ChangeEvent } from "react";
+import { useId, useState, type ChangeEvent, type DragEvent } from "react";
 import Image from "next/image";
-import { Circle, ImagePlus, RotateCcw, Square, Trash2 } from "lucide-react";
+import { Camera, Circle, RotateCcw, Square, X } from "lucide-react";
 import { compressImage } from "@/lib/imageCompressor";
 import { cn } from "@/lib/utils";
 
@@ -26,14 +26,12 @@ export function ImageUploader({
   const inputId = useId();
   const [internalShape, setInternalShape] = useState<ImageShape>("circle");
   const [isCompressing, setIsCompressing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const selectedShape = shape ?? internalShape;
 
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
+  const processFile = async (file?: File) => {
     if (!file) return;
-
     setError(null);
     setIsCompressing(true);
     try {
@@ -43,53 +41,79 @@ export function ImageUploader({
       setError(
         compressionError instanceof Error
           ? compressionError.message
-          : "The image could not be uploaded.",
+          : "The image could not be uploaded."
       );
     } finally {
       setIsCompressing(false);
     }
   };
 
-  const handleRemove = () => {
-    setError(null);
-    onPhotoChange(undefined);
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    await processFile(file);
+  };
+
+  const handleDrop = async (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    const file = event.dataTransfer.files?.[0];
+    await processFile(file);
+  };
+
+  const handleShapeSelect = (nextShape: ImageShape) => {
+    setInternalShape(nextShape);
+    onShapeChange?.(nextShape);
   };
 
   return (
-    <div className={cn("space-y-3", className)}>
-      <div className="flex items-center gap-4">
-        <div
-          className={cn(
-            "flex size-24 shrink-0 items-center justify-center overflow-hidden border border-zinc-200 bg-zinc-100",
-            selectedShape === "circle" ? "rounded-full" : "rounded-xl",
-          )}
-        >
-          {photo ? (
-            <Image
-              src={photo}
-              alt="Profile photo preview"
-              width={96}
-              height={96}
-              unoptimized
-              className="size-full object-cover"
-            />
-          ) : (
-            <ImagePlus className="size-7 text-zinc-400" aria-hidden="true" />
-          )}
-        </div>
-
-        <div className="min-w-0 space-y-2">
-          <div className="flex flex-wrap gap-2">
+    <div className={cn("space-y-2", className)}>
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-3">
+        {/* বামপাশ: ইমেজ প্রিভিউ + ক্লিক/ড্রপ আপলোড */}
+        <div className="flex min-w-0 items-center gap-3.5">
+          <div className="relative shrink-0">
             <label
               htmlFor={inputId}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              title={photo ? "Click or drop to change photo" : "Click or drop to upload photo"}
               className={cn(
-                "inline-flex cursor-pointer items-center gap-2 rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700",
-                isCompressing && "cursor-wait opacity-60",
+                "group relative flex size-20 cursor-pointer items-center justify-center overflow-hidden border-2 border-dashed border-zinc-300 bg-white transition-all hover:border-zinc-900",
+                selectedShape === "circle" ? "rounded-full" : "rounded-2xl",
+                photo && "border-solid border-zinc-200",
+                isDragging && "scale-105 border-zinc-900 bg-zinc-100",
+                isCompressing && "pointer-events-none opacity-60"
               )}
             >
-              <ImagePlus className="size-4" aria-hidden="true" />
-              {isCompressing ? "Processing..." : photo ? "Change photo" : "Upload photo"}
+              {photo ? (
+                <>
+                  <Image
+                    src={photo}
+                    alt="Profile photo"
+                    width={80}
+                    height={80}
+                    unoptimized
+                    className="size-full object-cover"
+                  />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 text-[11px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                    <Camera className="mb-0.5 size-4" />
+                    Change
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-zinc-400 transition-colors group-hover:text-zinc-800">
+                  <Camera className="size-5" />
+                  <span className="mt-1 text-[10px] font-medium">
+                    {isCompressing ? "Wait..." : "Upload"}
+                  </span>
+                </div>
+              )}
             </label>
+
             <input
               id={inputId}
               type="file"
@@ -98,65 +122,84 @@ export function ImageUploader({
               disabled={isCompressing}
               onChange={handleFileChange}
             />
+
+            {/* ছবি রিমুভ করার জন্য কোণায় ছোট ব্যাজ বাটন */}
             {photo && (
               <button
                 type="button"
-                onClick={handleRemove}
-                className="inline-flex items-center gap-2 rounded-md border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+                onClick={() => {
+                  setError(null);
+                  onPhotoChange(undefined);
+                }}
+                aria-label="Remove photo"
+                title="Remove photo"
+                className="absolute -right-1 -top-1 flex size-6 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
               >
-                <Trash2 className="size-4" aria-hidden="true" />
-                Remove
+                <X className="size-3.5" />
               </button>
             )}
           </div>
-          <p className="text-xs text-zinc-500">JPEG or PNG, automatically compressed to 300px.</p>
-        </div>
-      </div>
 
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-medium text-zinc-700">Photo shape</legend>
-        <div className="flex gap-2">
+          <div className="min-w-0">
+            <label
+              htmlFor={inputId}
+              className="block cursor-pointer truncate text-sm font-medium text-zinc-800 hover:underline"
+            >
+              {isCompressing
+                ? "Compressing image..."
+                : photo
+                  ? "Profile photo"
+                  : "Add profile photo"}
+            </label>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Click or drop JPEG/PNG (auto-300px)
+            </p>
+          </div>
+        </div>
+
+        {/* ডানপাশ: কম্প্যাক্ট সেগমেন্টেড শেপ সুইচার */}
+        <div
+          role="group"
+          aria-label="Photo shape"
+          className="inline-flex shrink-0 rounded-lg border border-zinc-200 bg-white p-0.5 shadow-2xs"
+        >
           <button
             type="button"
             aria-pressed={selectedShape === "circle"}
-            onClick={() => {
-              setInternalShape("circle");
-              onShapeChange?.("circle");
-            }}
+            onClick={() => handleShapeSelect("circle")}
+            title="Circle shape"
             className={cn(
-              "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors",
+              "flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
               selectedShape === "circle"
-                ? "border-zinc-900 bg-zinc-900 text-white"
-                : "border-zinc-200 text-zinc-700 hover:bg-zinc-50",
+                ? "bg-zinc-900 text-white shadow-2xs"
+                : "text-zinc-600 hover:text-zinc-900"
             )}
           >
-            <Circle className="size-4" aria-hidden="true" />
-            Circular
+            <Circle className="size-3.5" />
+            <span className="hidden sm:inline">Circle</span>
           </button>
           <button
             type="button"
             aria-pressed={selectedShape === "square"}
-            onClick={() => {
-              setInternalShape("square");
-              onShapeChange?.("square");
-            }}
+            onClick={() => handleShapeSelect("square")}
+            title="Rounded square shape"
             className={cn(
-              "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors",
+              "flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
               selectedShape === "square"
-                ? "border-zinc-900 bg-zinc-900 text-white"
-                : "border-zinc-200 text-zinc-700 hover:bg-zinc-50",
+                ? "bg-zinc-900 text-white shadow-2xs"
+                : "text-zinc-600 hover:text-zinc-900"
             )}
           >
-            <Square className="size-4" aria-hidden="true" />
-            Rounded square
+            <Square className="size-3.5" />
+            <span className="hidden sm:inline">Square</span>
           </button>
         </div>
-      </fieldset>
+      </div>
 
       {error && (
-        <div role="alert" className="flex items-center gap-2 text-sm text-red-600">
-          <RotateCcw className="size-4" aria-hidden="true" />
-          {error}
+        <div role="alert" className="flex items-center gap-1.5 text-xs text-red-600">
+          <RotateCcw className="size-3.5 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
     </div>

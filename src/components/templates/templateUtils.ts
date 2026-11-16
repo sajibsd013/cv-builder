@@ -1,3 +1,4 @@
+import { createElement, type ReactNode } from "react";
 import type { CVFontFamily, CVProfile, SectionKey } from "@/types/cv";
 
 export const cvFontVariables: Record<CVFontFamily, string> = {
@@ -51,4 +52,41 @@ export function contactLinks(profile: CVProfile): string[] {
     profile.personalInfo.linkedin,
     profile.personalInfo.github,
   ].filter((value): value is string => Boolean(value));
+}
+
+function renderInline(text: string, keyPrefix: string): ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+  return parts.filter(Boolean).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return createElement("strong", { key: `${keyPrefix}-bold-${index}` }, part.slice(2, -2));
+    }
+    if (part.startsWith("*") && part.endsWith("*")) {
+      return createElement("em", { key: `${keyPrefix}-italic-${index}` }, part.slice(1, -1));
+    }
+    return createElement("span", { key: `${keyPrefix}-text-${index}` }, part);
+  });
+}
+
+export function renderFormattedText(text: string): ReactNode {
+  const lines = text.split(/\r?\n/);
+  const nodes: ReactNode[] = [];
+  let bullets: string[] = [];
+  const flushBullets = () => {
+    if (!bullets.length) return;
+    nodes.push(createElement("ul", { key: `list-${nodes.length}`, className: "list-disc pl-4" },
+      bullets.map((line, index) => createElement("li", { key: `bullet-${index}` }, renderInline(line, `bullet-${index}`)))));
+    bullets = [];
+  };
+  lines.forEach((line, index) => {
+    const bulletText = line.match(/^\s*[•*-]\s+(.*)$/)?.[1];
+    if (bulletText !== undefined) {
+      bullets.push(bulletText);
+      return;
+    }
+    flushBullets();
+    if (line) nodes.push(createElement("span", { key: `line-${index}` }, renderInline(line, `line-${index}`)));
+    if (index < lines.length - 1 && !lines[index + 1].match(/^\s*[•*-]\s+/)) nodes.push(createElement("br", { key: `break-${index}` }));
+  });
+  flushBullets();
+  return nodes;
 }
