@@ -257,6 +257,13 @@ export function CVProvider({ children }: { children: ReactNode }) {
         if (loadedData) {
           setProfiles(loadedData.profiles.map(normalizeProfile));
           setActiveProfileId(loadedData.activeProfileId);
+        } else {
+          // First-time visit: seed a sample CV so users land on a ready-to-edit
+          // profile instead of an empty editor. It is persisted to localStorage
+          // automatically by the save effect below.
+          const sample = cloneProfile(sampleCVProfile);
+          setProfiles([sample]);
+          setActiveProfileId(sample.id);
         }
         setIsLoaded(true);
       }, 0);

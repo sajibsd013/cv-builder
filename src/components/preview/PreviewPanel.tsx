@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { FileText, Maximize2, Minus, Plus, Sparkles } from "lucide-react";
+import { Maximize2, Minus, Plus } from "lucide-react";
 import { useCV } from "@/context/CVContext";
 import { ATSTemplate } from "@/components/templates/ATSTemplate";
 import { EuropassTemplate } from "@/components/templates/EuropassTemplate";
@@ -16,7 +16,7 @@ const SHEET_WIDTH = 794;
 const SHEET_HEIGHT = 1123;
 
 export function PreviewPanel({ className }: { className?: string }) {
-  const { activeCV, isLoaded, createProfile, loadSampleData } = useCV();
+  const { activeCV, isLoaded } = useCV();
   const sheetAreaRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(0.75);
@@ -198,42 +198,7 @@ export function PreviewPanel({ className }: { className?: string }) {
   }
 
   if (!activeCV) {
-    return (
-      <section
-        className={cn(
-          "preview-panel flex min-h-full flex-1 items-center justify-center bg-slate-100/80 p-8",
-          className
-        )}
-      >
-        <div className="flex aspect-[210/297] w-full max-w-[440px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white/90 p-8 text-center shadow-xs">
-          <div className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-            <FileText className="size-6" />
-          </div>
-          <h3 className="text-base font-bold text-slate-900">Live A4 Preview</h3>
-          <p className="mt-1 max-w-xs text-xs leading-relaxed text-slate-500">
-            Your formatted CV will appear here in real time as you fill out your details.
-          </p>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => createProfile()}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-700"
-            >
-              <Plus className="size-3.5" />
-              New CV
-            </button>
-            <button
-              type="button"
-              onClick={loadSampleData}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-            >
-              <Sparkles className="size-3.5 text-amber-500" />
-              Load Sample
-            </button>
-          </div>
-        </div>
-      </section>
-    );
+    return null;
   }
 
   const profile = activeCV;

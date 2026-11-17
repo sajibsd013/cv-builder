@@ -1906,17 +1906,58 @@ function DesignEditor({
 }
 
 export function EditorPanel({ className }: { className?: string }) {
-  const { activeCV, isLoaded, updateActiveCV } = useCV();
+  const {
+    activeCV,
+    isLoaded,
+    createProfile,
+    loadSampleData,
+    updateActiveCV,
+  } = useCV();
   const [tab, setTab] = useState<Tab>("content");
   if (!isLoaded || !activeCV)
     return (
       <aside
         className={cn(
-          "flex w-full items-center justify-center p-6 text-sm text-slate-500",
+          "editor-panel flex h-full min-w-0 flex-col items-center justify-start border-r border-slate-200/80 bg-slate-100/60 print:hidden px-4 py-6",
           className
         )}
       >
-        Create or select a CV profile to start editing.
+        <div className="flex max-w-sm w-full flex-col items-center gap-4 text-center pt-22">
+          <FileText className="size-8 text-slate-400" />
+          <div>
+            <h3 className="text-base font-semibold text-slate-900 tracking-tight">
+              No CV profile loaded
+            </h3>
+            <p className="mt-1 text-sm text-slate-500 leading-relaxed">
+              Create or select a CV profile to start editing.
+            </p>
+          </div>
+          <div
+            className={cn(
+              "flex w-full flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3",
+              isLoaded ? "" : "opacity-70"
+            )}
+          >
+            <button
+              type="button"
+              onClick={() => createProfile()}
+              disabled={!isLoaded}
+              className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-all disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]"
+            >
+              <Plus className="size-4" />
+              New CV
+            </button>
+            <button
+              type="button"
+              onClick={() => loadSampleData()}
+              disabled={!isLoaded}
+              className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 bg-white shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-all disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]"
+            >
+              <Sparkles className="size-4 text-amber-500" />
+              Load Sample
+            </button>
+          </div>
+        </div>
       </aside>
     );
   const update = (updates: Partial<CVProfile>) => updateActiveCV(updates);
