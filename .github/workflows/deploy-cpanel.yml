@@ -33,7 +33,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
           local-dir: ./out/
-          server-dir: ./cv-builder.creativisetechsolutions.com/
+          server-dir: ./
           exclude: |
             **/.git*
             **/.git*/**
