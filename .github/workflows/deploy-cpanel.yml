@@ -31,11 +31,13 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
           local-dir: ./out/
-          server-dir: ./
+          server-dir: ./cv-builder.creativisetechsolutions.com/
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
             **/.well-known/**
             **/cgi-bin/**
+            **/.htaccess
